@@ -1,1 +1,5 @@
-<dockerdemo-nx-welcome></dockerdemo-nx-welcome>
+<ul>
+  <li *ngFor="let pokemon of pokemon$ | async">
+    {{ pokemon.name }}
+  </li>
+</ul>

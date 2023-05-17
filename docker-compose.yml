@@ -1,0 +1,46 @@
+version: '3.8'
+
+networks:
+  dockerdemo:
+services:
+  api:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: nxpokedex-api-image
+    container_name: nxpokedex-api
+    restart: unless-stopped
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      MONGODB: ${MONGODB}
+      PORT: ${PORT}
+      DEFAULT_LIMIT: ${DEFAULT_LIMIT}
+    networks:
+      - dockerdemo
+  spa:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: apps/spa/Dockerfile
+    image: nxpokedex-spa-image
+    container_name: nxpokedex-spa
+    restart: unless-stopped
+    ports:
+      - 80:80
+    networks:
+      - dockerdemo
+  db:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - 27017:27017
+    environment:
+      MONGODB_DATABASE: nest-pokemon
+    volumes:
+      - ./mongo:/data/db
+    networks:
+      - dockerdemo

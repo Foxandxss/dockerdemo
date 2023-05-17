@@ -1,0 +1,70 @@
+version: '3.8'
+
+networks:
+  dockerdemo:
+services:
+  api:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: nxpokedex-api-image
+    container_name: nxpokedex-api
+    restart: unless-stopped
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      MONGODB: ${MONGODB}
+      PORT: ${PORT}
+      DEFAULT_LIMIT: ${DEFAULT_LIMIT}
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.dockerdemo-api.rule=Host(`pokedex-api.localhost`)'
+      - 'traefik.http.routers.dockerdemo-api.entrypoints=web'
+    networks:
+      - dockerdemo
+  spa:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: apps/spa/Dockerfile
+    image: nxpokedex-spa-image
+    container_name: nxpokedex-spa
+    restart: unless-stopped
+    # ports:
+    #   - 4200:80
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.dockerdemo-spa.rule=Host(`pokedex.localhost`)'
+      - 'traefik.http.routers.dockerdemo-spa.entrypoints=web'
+    networks:
+      - dockerdemo
+  db:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - 27017:27017
+    environment:
+      MONGODB_DATABASE: nest-pokemon
+    volumes:
+      - ./mongo:/data/db
+    networks:
+      - dockerdemo
+  traefik:
+    image: 'traefik:v2.9'
+    command:
+      - '--log.level=DEBUG'
+      - '--tracing=false'
+      - '--api.insecure=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+    ports:
+      - '81:80'
+      - '8081:8080'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+    networks:
+      - dockerdemo
